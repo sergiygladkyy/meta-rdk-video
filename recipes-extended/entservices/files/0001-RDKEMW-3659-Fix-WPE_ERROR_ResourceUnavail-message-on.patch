@@ -1,4 +1,4 @@
-From b5fcd4f8d4340b914cb2933a617f0ca0620f0868 Mon Sep 17 00:00:00 2001
+From 02b81508a1ada50311bf94acfb165d853ba20ed0 Mon Sep 17 00:00:00 2001
 From: dponna534 <Deepak_Ponnath2@comcast.com>
 Date: Mon, 18 Aug 2025 12:50:48 +0530
 Subject: [PATCH] RDKEMW-3659: Fix WPE_ERROR_ResourceUnavail message on
@@ -12,8 +12,8 @@ Signed-off-by: Deepak_Ponnath2@comcast.com
 ---
  SystemServices/SystemServices.cpp | 39 ++++++++++++++++++++++++++++++-
  SystemServices/SystemServices.h   |  1 +
- helpers/UtilsJsonRpc.h            |  7 +++---
- 3 files changed, 42 insertions(+), 5 deletions(-)
+ helpers/UtilsJsonRpc.h            | 14 +++--------
+ 3 files changed, 42 insertions(+), 12 deletions(-)
 
 diff --git a/SystemServices/SystemServices.cpp b/SystemServices/SystemServices.cpp
 index 703db5f..62c8da2 100755
@@ -92,13 +92,20 @@ index 0c09994..3f50306 100644
  #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
                  void InitializeIARM();
 diff --git a/helpers/UtilsJsonRpc.h b/helpers/UtilsJsonRpc.h
-index bff772a..f6bcae2 100644
+index bff772a..6bf94d2 100644
 --- a/helpers/UtilsJsonRpc.h
 +++ b/helpers/UtilsJsonRpc.h
-@@ -31,12 +31,11 @@
-  * Newer APIs should return only error code to match the spec
-  */
+@@ -24,19 +24,11 @@
+ #define LOGINFOMETHOD() { std::string json; parameters.ToString(json); LOGINFO( "params=%s", json.c_str() ); }
+ #define LOGTRACEMETHODFIN() { std::string json; response.ToString(json); LOGINFO( "response=%s", json.c_str() ); }
  
+-/**
+- * DO NOT USE THIS.
+- *
+- * "success" parameter was added for legacy reasons.
+- * Newer APIs should return only error code to match the spec
+- */
+-
 -#define returnResponse(expression) \
 +#define returnResponse(success) \
      { \
