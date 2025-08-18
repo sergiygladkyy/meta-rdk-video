@@ -1,0 +1,116 @@
+From b5fcd4f8d4340b914cb2933a617f0ca0620f0868 Mon Sep 17 00:00:00 2001
+From: dponna534 <Deepak_Ponnath2@comcast.com>
+Date: Mon, 18 Aug 2025 12:50:48 +0530
+Subject: [PATCH] RDKEMW-3659: Fix WPE_ERROR_ResourceUnavail message on
+ getModel
+
+Reason for change: Fix WPE_ERROR_ResourceUnavail message on getModel
+Test Procedure: Refer ticket
+Risks: Low
+
+Signed-off-by: Deepak_Ponnath2@comcast.com
+---
+ SystemServices/SystemServices.cpp | 39 ++++++++++++++++++++++++++++++-
+ SystemServices/SystemServices.h   |  1 +
+ helpers/UtilsJsonRpc.h            |  7 +++---
+ 3 files changed, 42 insertions(+), 5 deletions(-)
+
+diff --git a/SystemServices/SystemServices.cpp b/SystemServices/SystemServices.cpp
+index 703db5f..62c8da2 100755
+--- a/SystemServices/SystemServices.cpp
++++ b/SystemServices/SystemServices.cpp
+@@ -70,6 +70,12 @@
+ #include "UtilsgetFileContent.h"
+ #include "UtilsProcess.h"
+ 
++#ifdef USE_THUNDER_R4
++#include <interfaces/IDeviceInfo.h>
++#else
++#include <interfaces/IDeviceInfo2.h>
++#endif /* USE_THUNDER_R4 */
++
+ using namespace std;
+ using namespace WPEFramework;
+ using PowerState = WPEFramework::Exchange::IPowerManager::PowerState;
+@@ -2438,7 +2444,7 @@ namespace WPEFramework {
+             std::string estbMac = collectDeviceInfo("estb_mac");
+             removeCharsFromString(estbMac, "\n\r");
+             rConf["eStbMac"] = estbMac;
+-            rConf["model"] = getModel();
++            rConf["model"] = RetrieveModelNumberThroughCOMRPC();
+             rConf["firmwareVersion"] = stbVersion;
+             response["xconfParams"] = rConf;
+             returnResponse(true);
+@@ -4417,6 +4423,37 @@ namespace WPEFramework {
+             return "unknown";
+ #endif
+         }
++
++    string RetrieveModelNumberThroughCOMRPC()
++    {
++        LOGINFO("RetrieveModelNumberThroughCOMRPC Entry\n");
++        std::string Number;
++        if (m_shellService)
++        {
++           PluginHost::IShell::state state;
++
++           if ((Utils::getServiceState(_service, "DeviceInfo", state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED))
++           {
++              Utils::activatePlugin(_service, "DeviceInfo");
++           }
++           if ((Utils::getServiceState(_service, "DeviceInfo", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
++           {
++              auto _remoteDeviceInfoObject = m_shellService->QueryInterfaceByCallsign<Exchange::IDeviceInfo>("DeviceInfo");
++
++              if(_remoteDeviceInfoObject)
++              {
++                _remoteDeviceInfoObject->Sku(Number);
++                _remoteDeviceInfoObject->Release();
++              }
++          }
++          else
++          {
++             LOGERR("Failed to create DeviceInfo object\n");
++          }
++        }
++         return Number;
++    }
++
+ 	string SystemServices::getStbBranchString()
+ 	{
+ 		static string stbBranchStr;
+diff --git a/SystemServices/SystemServices.h b/SystemServices/SystemServices.h
+index 0c09994..3f50306 100644
+--- a/SystemServices/SystemServices.h
++++ b/SystemServices/SystemServices.h
+@@ -258,6 +258,7 @@ namespace WPEFramework {
+                 std::string getStbTimestampString();
+ 		std::string getStbBranchString();
+                 bool makePersistentDir();
++                std::string RetrieveModelNumberThroughCOMRPC();
+ 
+ #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
+                 void InitializeIARM();
+diff --git a/helpers/UtilsJsonRpc.h b/helpers/UtilsJsonRpc.h
+index bff772a..f6bcae2 100644
+--- a/helpers/UtilsJsonRpc.h
++++ b/helpers/UtilsJsonRpc.h
+@@ -31,12 +31,11 @@
+  * Newer APIs should return only error code to match the spec
+  */
+ 
+-#define returnResponse(expression) \
++#define returnResponse(success) \
+     { \
+-        bool successBoolean = expression; \
+-        response["success"] = successBoolean; \
++        response["success"] = success; \
+         LOGTRACEMETHODFIN(); \
+-        return (successBoolean ? WPEFramework::Core::ERROR_NONE : WPEFramework::Core::ERROR_GENERAL); \
++        return (WPEFramework::Core::ERROR_NONE); \
+     }
+ #define returnIfParamNotFound(param, name) \
+     if (!param.HasLabel(name)) \
+-- 
+2.47.1.windows.2
+
