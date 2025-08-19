@@ -22,7 +22,7 @@ index 703db5f..9045701 100755
  #include "UtilsfileExists.h"
  #include "UtilsgetFileContent.h"
  #include "UtilsProcess.h"
-+#include "UtilController.h"
++#include "UtilsController.h"
 +
 +#ifdef USE_THUNDER_R4
 +#include <interfaces/IDeviceInfo.h>
