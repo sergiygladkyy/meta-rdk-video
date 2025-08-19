@@ -1,4 +1,4 @@
-From bddbca447ddf89fcfd1d1f4d47c7069809f25948 Mon Sep 17 00:00:00 2001
+From 400e86ef933b80e70f8eee237e613cb7121fbe66 Mon Sep 17 00:00:00 2001
 From: dponna534 <Deepak_Ponnath2@comcast.com>
 Date: Mon, 18 Aug 2025 15:43:33 +0530
 Subject: [PATCH] RDKEMW-3659: Fix WPE_ERROR_ResourceUnavail message on
@@ -16,7 +16,7 @@ Signed-off-by: Deepak_Ponnath2@comcast.com
  3 files changed, 40 insertions(+), 125 deletions(-)
 
 diff --git a/SystemServices/SystemServices.cpp b/SystemServices/SystemServices.cpp
-index 703db5f..33911c8 100755
+index 703db5f..a8b21a8 100755
 --- a/SystemServices/SystemServices.cpp
 +++ b/SystemServices/SystemServices.cpp
 @@ -69,6 +69,13 @@
@@ -47,35 +47,35 @@ index 703db5f..33911c8 100755
  #endif
          }
 +
-+    string RetrieveModelNumberThroughCOMRPC()
-+    {
-+        LOGINFO("RetrieveModelNumberThroughCOMRPC Entry\n");
-+        std::string Number;
-+        if (_service)
-+        {
-+           PluginHost::IShell::state state;
++	string SystemServices::RetrieveModelNumberThroughCOMRPC()
++	{
++	    LOGINFO("RetrieveModelNumberThroughCOMRPC Entry\n");
++	    std::string Number;
++	    if (m_shellService)
++	    {
++	       PluginHost::IShell::state state;
 +
-+           if ((Utils::getServiceState(_service, "DeviceInfo", state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED))
-+           {
-+              Utils::activatePlugin(_service, "DeviceInfo");
-+           }
-+           if ((Utils::getServiceState(_service, "DeviceInfo", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
-+           {
-+              auto _remoteDeviceInfoObject = m_shellService->QueryInterfaceByCallsign<Exchange::IDeviceInfo>("DeviceInfo");
++	       if ((Utils::getServiceState(m_shellService, "DeviceInfo", state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED))
++	       {
++		  Utils::activatePlugin(m_shellService, "DeviceInfo");
++	       }
++	       if ((Utils::getServiceState(m_shellService, "DeviceInfo", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
++	       {
++		  auto _remoteDeviceInfoObject = m_shellService->QueryInterfaceByCallsign<Exchange::IDeviceInfo>("DeviceInfo");
 +
-+              if(_remoteDeviceInfoObject)
-+              {
-+                _remoteDeviceInfoObject->Sku(Number);
-+                _remoteDeviceInfoObject->Release();
-+              }
-+            }
-+            else
-+            {
-+                LOGERR("Failed to create DeviceInfo object\n");
-+            }
-+        }
-+         return Number;
-+    }
++		  if(_remoteDeviceInfoObject)
++		  {
++		    _remoteDeviceInfoObject->Sku(Number);
++		    _remoteDeviceInfoObject->Release();
++		  }
++		}
++		else
++		{
++		    LOGERR("Failed to create DeviceInfo object\n");
++		}
++	    }
++	     return Number;
++	}
 +
  	string SystemServices::getStbBranchString()
  	{
