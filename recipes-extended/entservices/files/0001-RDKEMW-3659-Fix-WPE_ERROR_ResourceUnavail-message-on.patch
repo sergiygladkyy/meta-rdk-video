@@ -1,4 +1,4 @@
-From 3d72662f110884f78c8c4d48483b523b92744bb1 Mon Sep 17 00:00:00 2001
+From faa8cfa4a556e2650f082cfb3a4127f54f536c22 Mon Sep 17 00:00:00 2001
 From: dponna534 <Deepak_Ponnath2@comcast.com>
 Date: Mon, 18 Aug 2025 15:43:33 +0530
 Subject: [PATCH] RDKEMW-3659: Fix WPE_ERROR_ResourceUnavail message on
@@ -10,28 +10,29 @@ Risks: Low
 
 Signed-off-by: Deepak_Ponnath2@comcast.com
 ---
- SystemServices/SystemServices.cpp | 39 ++++++++++++++++++++++++++++++-
+ SystemServices/SystemServices.cpp | 40 ++++++++++++++++++++++++++++++-
  SystemServices/SystemServices.h   |  1 +
- 2 files changed, 39 insertions(+), 1 deletion(-)
+ 2 files changed, 40 insertions(+), 1 deletion(-)
 
 diff --git a/SystemServices/SystemServices.cpp b/SystemServices/SystemServices.cpp
-index 703db5f..62c8da2 100755
+index 703db5f..9045701 100755
 --- a/SystemServices/SystemServices.cpp
 +++ b/SystemServices/SystemServices.cpp
-@@ -70,6 +70,12 @@
+@@ -69,6 +69,13 @@
+ #include "UtilsfileExists.h"
  #include "UtilsgetFileContent.h"
  #include "UtilsProcess.h"
- 
++#include "UtilController.h"
++
 +#ifdef USE_THUNDER_R4
 +#include <interfaces/IDeviceInfo.h>
 +#else
 +#include <interfaces/IDeviceInfo2.h>
 +#endif /* USE_THUNDER_R4 */
-+
+ 
  using namespace std;
  using namespace WPEFramework;
- using PowerState = WPEFramework::Exchange::IPowerManager::PowerState;
-@@ -2438,7 +2444,7 @@ namespace WPEFramework {
+@@ -2438,7 +2445,7 @@ namespace WPEFramework {
              std::string estbMac = collectDeviceInfo("estb_mac");
              removeCharsFromString(estbMac, "\n\r");
              rConf["eStbMac"] = estbMac;
@@ -40,7 +41,7 @@ index 703db5f..62c8da2 100755
              rConf["firmwareVersion"] = stbVersion;
              response["xconfParams"] = rConf;
              returnResponse(true);
-@@ -4417,6 +4423,37 @@ namespace WPEFramework {
+@@ -4417,6 +4424,37 @@ namespace WPEFramework {
              return "unknown";
  #endif
          }
@@ -49,7 +50,7 @@ index 703db5f..62c8da2 100755
 +    {
 +        LOGINFO("RetrieveModelNumberThroughCOMRPC Entry\n");
 +        std::string Number;
-+        if (m_shellService)
++        if (_service)
 +        {
 +           PluginHost::IShell::state state;
 +
@@ -66,11 +67,11 @@ index 703db5f..62c8da2 100755
 +                _remoteDeviceInfoObject->Sku(Number);
 +                _remoteDeviceInfoObject->Release();
 +              }
-+          }
-+          else
-+          {
-+             LOGERR("Failed to create DeviceInfo object\n");
-+          }
++            }
++            else
++            {
++                LOGERR("Failed to create DeviceInfo object\n");
++            }
 +        }
 +         return Number;
 +    }
