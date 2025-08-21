@@ -1,0 +1,118 @@
+From c215d05e97f92188703f24ee5031b7333d98cddc Mon Sep 17 00:00:00 2001
+From: dponna534 <Deepak_Ponnath2@comcast.com>
+Date: Thu, 21 Aug 2025 13:24:37 +0530
+Subject: [PATCH] RDKEMW-3659: Fix WPE_ERROR_ResourceUnavail message on
+ getModel
+
+Reason for change: Fix WPE_ERROR_ResourceUnavail message on getModel
+Test Procedure: Refer ticket
+Risks: Low
+
+Signed-off-by: Deepak_Ponnath2@comcast.com
+---
+ CMakeLists.txt                    |  6 +++++
+ SystemServices/SystemServices.cpp | 40 ++++++++++++++++++++++++++++++-
+ SystemServices/SystemServices.h   |  1 +
+ 3 files changed, 46 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b178c45..d85c6c2 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -50,10 +50,16 @@ if(RDK_SERVICE_L2_TEST)
+     add_subdirectory(Tests/L2Tests)
+ endif()
+ 
++option(DISABLE_SECURITY_TOKEN "Disable security token" OFF)
++
+ if(RDK_SERVICES_L1_TEST)
+     add_subdirectory(Tests/L1Tests)
+ endif()
+ 
++if(DISABLE_SECURITY_TOKEN)
++    add_definitions(-DDISABLE_SECURITY_TOKEN)
++endif()
++
+ if(PLUGIN_DISPLAYSETTINGS)
+     add_subdirectory(DisplaySettings)
+ endif()
+diff --git a/SystemServices/SystemServices.cpp b/SystemServices/SystemServices.cpp
+index 703db5f..a8b21a8 100755
+--- a/SystemServices/SystemServices.cpp
++++ b/SystemServices/SystemServices.cpp
+@@ -69,6 +69,13 @@
+ #include "UtilsfileExists.h"
+ #include "UtilsgetFileContent.h"
+ #include "UtilsProcess.h"
++#include "UtilsController.h"
++
++#ifdef USE_THUNDER_R4
++#include <interfaces/IDeviceInfo.h>
++#else
++#include <interfaces/IDeviceInfo2.h>
++#endif /* USE_THUNDER_R4 */
+ 
+ using namespace std;
+ using namespace WPEFramework;
+@@ -2438,7 +2445,7 @@ namespace WPEFramework {
+             std::string estbMac = collectDeviceInfo("estb_mac");
+             removeCharsFromString(estbMac, "\n\r");
+             rConf["eStbMac"] = estbMac;
+-            rConf["model"] = getModel();
++            rConf["model"] = RetrieveModelNumberThroughCOMRPC();
+             rConf["firmwareVersion"] = stbVersion;
+             response["xconfParams"] = rConf;
+             returnResponse(true);
+@@ -4417,6 +4424,37 @@ namespace WPEFramework {
+             return "unknown";
+ #endif
+         }
++
++	string SystemServices::RetrieveModelNumberThroughCOMRPC()
++	{
++	    LOGINFO("RetrieveModelNumberThroughCOMRPC Entry\n");
++	    std::string Number;
++	    if (m_shellService)
++	    {
++	       PluginHost::IShell::state state;
++
++	       if ((Utils::getServiceState(m_shellService, "DeviceInfo", state) == Core::ERROR_NONE) && (state != PluginHost::IShell::state::ACTIVATED))
++	       {
++		  Utils::activatePlugin(m_shellService, "DeviceInfo");
++	       }
++	       if ((Utils::getServiceState(m_shellService, "DeviceInfo", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
++	       {
++		  auto _remoteDeviceInfoObject = m_shellService->QueryInterfaceByCallsign<Exchange::IDeviceInfo>("DeviceInfo");
++
++		  if(_remoteDeviceInfoObject)
++		  {
++		    _remoteDeviceInfoObject->Sku(Number);
++		    _remoteDeviceInfoObject->Release();
++		  }
++		}
++		else
++		{
++		    LOGERR("Failed to create DeviceInfo object\n");
++		}
++	    }
++	     return Number;
++	}
++
+ 	string SystemServices::getStbBranchString()
+ 	{
+ 		static string stbBranchStr;
+diff --git a/SystemServices/SystemServices.h b/SystemServices/SystemServices.h
+index 0c09994..3f50306 100644
+--- a/SystemServices/SystemServices.h
++++ b/SystemServices/SystemServices.h
+@@ -258,6 +258,7 @@ namespace WPEFramework {
+                 std::string getStbTimestampString();
+ 		std::string getStbBranchString();
+                 bool makePersistentDir();
++                std::string RetrieveModelNumberThroughCOMRPC();
+ 
+ #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
+                 void InitializeIARM();
+-- 
+2.47.1.windows.2
+

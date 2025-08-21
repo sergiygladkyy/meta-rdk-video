@@ -10,10 +10,11 @@ inherit cmake pkgconfig
 
 SRC_URI = "${CMF_GITHUB_ROOT}/entservices-deviceanddisplay;${CMF_GITHUB_SRC_URI_SUFFIX} \
            file://0001-RDKTV-20749-Revert-Merge-pull-request-3336-from-npol.patch \
+           file://0001-RDKEMW-3659-Fix-WPE_ERROR_ResourceUnavail-message-on \
           "
 
 # Release version - 3.1.6
-SRCREV = "c215d05e97f92188703f24ee5031b7333d98cddc"
+SRCREV = "5ce952510d4cbd3e051b9f63417c93cd8b91ce93"
 
 PACKAGE_ARCH = "${MIDDLEWARE_ARCH}"
 
